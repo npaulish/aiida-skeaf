@@ -10,23 +10,23 @@ from aiida_skeaf.calculations.wan2skeaf import Wan2skeafCalculation
 def submit():
     """Submit a Wan2skeafCalculation."""
 
-    bxsf = orm.load_node(152164)
+    bxsf = orm.load_node(244145)
 
-    wan2skeaf_code = orm.load_code("skeaf-wan2skeaf@localhost-slurm")
+    wan2skeaf_code = orm.load_code("skeaf-wan2skeaf-jl@localhost-slurm")
 
     parameters = {
         "num_electrons": 31,
-        "band_index": "all",
+        "band_index": -1,
         "smearing_type": "cold",
-        "smearing_value": 0.13605693122994,
+        "smearing_value": 0.1,
     }
 
     inputs = {
         "code": wan2skeaf_code,
         "parameters": parameters,
         "bxsf": bxsf,
-        "bxsf_filename": "nscf.bxsf",
-        "settings": dict({"autolink_bxsf_filename": "nscf.bxsf"}),
+        "bxsf_filename": "wjl.7z",
+        "settings": dict({"autolink_bxsf_filename": "wjl.7z"}),
     }
 
     calc = engine.submit(Wan2skeafCalculation, **inputs)

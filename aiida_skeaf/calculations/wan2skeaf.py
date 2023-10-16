@@ -5,7 +5,7 @@ Register calculations via the "aiida.calculations" entry point in setup.json.
 """
 import pathlib
 
-from voluptuous import Any, Optional, Required, Schema
+from voluptuous import Any, Optional, Required, Schema  # pylint: disable=unused-import
 
 from aiida import orm
 from aiida.common import datastructures
@@ -19,7 +19,7 @@ class Wan2skeafCalculation(CalcJob):
 
     _DEFAULT_INPUT_BXSF = "input.bxsf"
     _DEFAULT_OUTPUT_FILE = "wan2skeaf.out"
-    _DEFAULT_OUTPUT_BXSF = "output.bxsf"
+    _DEFAULT_OUTPUT_BXSF = "output"
 
     @classmethod
     def define(cls, spec):
@@ -118,18 +118,18 @@ class Wan2skeafCalculation(CalcJob):
         # validate input parameters
         parameters = InputParameters(self.inputs.parameters.get_dict()).get_dict()
         cmdline_params = [
-            "--num_electrons",
+            "-n",
             parameters["num_electrons"],
-            "--band_index",
+            "-b",
             parameters["band_index"],
-            "--out_filename",
+            "-o",
             self._DEFAULT_OUTPUT_BXSF,
         ]
         if "num_spin" in parameters:
             cmdline_params += ["--num_spin", parameters["num_spin"]]
         if "smearing_type" in parameters and "smearing_value" in parameters:
-            cmdline_params += ["--smearing_type", parameters["smearing_type"]]
-            cmdline_params += ["--smearing_value", parameters["smearing_value"]]
+            cmdline_params += ["-s", parameters["smearing_type"]]
+            cmdline_params += ["-w", parameters["smearing_value"]]
 
         cmdline_params.append(self.inputs.bxsf_filename.value)
         #
@@ -173,7 +173,7 @@ class Wan2skeafCalculation(CalcJob):
 input_parameters = {
     Required("num_electrons"): int,
     Optional("num_spin"): int,
-    Optional("band_index", default="all"): Any(int, str),
+    Optional("band_index", default=-1): int,
     Optional("smearing_type"): str,
     Optional("smearing_value"): float,
 }

@@ -395,6 +395,8 @@ def estimate_fermi(
                 raise FermiLevelEstimationFailed(
                     f"Bisection method failed for {num_elec_local} electrons using {smearing_type} smearing with temperature {smearing_value}"
                 )
+            closest_e_below = -1.0  # Not implemented!
+            closest_e_above = -1.0
         else:
             band_energies.sort()
             num_expected_occupied_points = (
@@ -421,7 +423,11 @@ def estimate_fermi(
                 band_energies[num_expected_occupied_points - 1]
                 + band_energies[num_expected_occupied_points]
             ) / 2.0
+            closest_e_below = band_energies[num_expected_occupied_points - 1]
+            closest_e_above = band_energies[num_expected_occupied_points]
         print(f"Computed Fermi energy: {computed_fermi}")
+        print(f"Closest eigenvalue below Fermi energy: {closest_e_below}")
+        print(f"Closest eigenvalue above Fermi energy: {closest_e_above}")
         print("-" * 72)
 
     if plot_dos:
@@ -466,7 +472,7 @@ def parse_args(args=None):
         help="Filename of Wannier90 generated bxsf, can be bz2 compressed.",
     )
     parser.add_argument(
-        "-ne",
+        "-n",
         "--num_electrons",
         type=int,
         help="number of electrons.",
@@ -479,18 +485,18 @@ def parse_args(args=None):
         help="spin degeneracy.",
     )
     parser.add_argument(
-        "-ib",
+        "-b",
         "--band_index",
         # type=int,
         type=int_or_str,
         help=(
             "The band index to keep (integer, 1-based, the same as the "
             "content of the source BXSF. "
-            "Use `all` to write each band to a single bxsf."
+            "Use -1 to write each band to a single bxsf."
         ),
     )
     parser.add_argument(
-        "-sm_type",
+        "-s",
         "--smearing_type",
         type=str,
         default=None,
@@ -501,8 +507,8 @@ def parse_args(args=None):
         ),
     )
     parser.add_argument(
-        "-sm_val",
-        "--smearing_value",
+        "-w",
+        "--width_smearing",
         type=float,
         default=None,
         help=(
@@ -550,7 +556,7 @@ if __name__ == "__main__":
     num_spin = args.num_spin
     band_index = args.band_index
     smearing_type = args.smearing_type
-    smearing_value = args.smearing_value
+    smearing_value = args.width_smearing
     out_fname = args.out_filename
 
     print("cmdline args:")
@@ -645,7 +651,7 @@ if __name__ == "__main__":
             print("*" * 72)
 
         in_fhandle.seek(0)
-        if band_index == "all":
+        if band_index == -1:
             indexes = get_bxsf_band_indexes(in_fhandle)
             print(f'Bands in bxsf: {" ".join([str(_) for _ in indexes])}')
         else:

@@ -96,9 +96,9 @@ class Wan2skeafParser(Parser):
         """Attach RemoteData for extracted bxsf."""
 
         input_params = self.node.inputs["parameters"].get_dict()
-        input_band_index = input_params.get("band_index", "all")
+        input_band_index = input_params.get("band_index", -1)
 
-        if input_band_index == "all":
+        if input_band_index == -1:
             indexes = band_indexes_in_bxsf
         else:
             indexes = [input_band_index]
@@ -106,8 +106,12 @@ class Wan2skeafParser(Parser):
         remote_folder = self.node.outputs.remote_folder
         remote_folder_path = pathlib.Path(remote_folder.get_remote_path())
         remote_files = remote_folder.listdir()
-        bxsf_filename = Wan2skeafCalculation._DEFAULT_OUTPUT_BXSF.replace(  # pylint: disable=protected-access
-            ".bxsf", "_band_{:d}.bxsf"
+        # bxsf_filename = Wan2skeafCalculation._DEFAULT_OUTPUT_BXSF.replace(  # pylint: disable=protected-access
+        #     ".bxsf", "_band_{:d}.bxsf"
+        # )
+        bxsf_filename = (
+            Wan2skeafCalculation._DEFAULT_OUTPUT_BXSF
+            + "_band_{:d}.bxsf"  # pylint: disable=protected-access
         )
 
         for idx in indexes:
@@ -143,6 +147,12 @@ def parse_wan2skeaf_out(filecontent: ty.List[str]) -> orm.Dict:
         ),
         "fermi_energy_computed": re.compile(
             r"Computed Fermi energy:\s*([+-]?(?:[0-9]*[.])?[0-9]+)"
+        ),
+        "closest_eigenvalue_below_fl": re.compile(
+            r"Closest eigenvalue below Fermi energy:\s*([+-]?(?:[0-9]*[.])?[0-9]+)"
+        ),
+        "closest_eigenvalue_above_fl": re.compile(
+            r"Closest eigenvalue above Fermi energy:\s*([+-]?(?:[0-9]*[.])?[0-9]+)"
         ),
         "num_bands": re.compile(r"Number of bands:\s*([0-9]+)"),
         "kpoint_mesh": re.compile(r"Grid shape:\s*(.+)"),
@@ -185,6 +195,12 @@ def parse_wan2skeaf_out(filecontent: ty.List[str]) -> orm.Dict:
     ]
     parameters["fermi_energy_in_bxsf"] = float(parameters["fermi_energy_in_bxsf"])
     parameters["fermi_energy_computed"] = float(parameters["fermi_energy_computed"])
+    parameters["closest_eigenvalue_below_fl"] = float(
+        parameters["closest_eigenvalue_below_fl"]
+    )
+    parameters["closest_eigenvalue_above_fl"] = float(
+        parameters["closest_eigenvalue_above_fl"]
+    )
     # make sure the order is the same as parameters["band_indexes_in_bxsf"]
     parameters["band_min"] = [
         band_minmax[_][0] for _ in parameters["band_indexes_in_bxsf"]

@@ -1,0 +1,5 @@
+[deps]
+Comonicon = "863f3e99-da2a-4334-8734-de3dacbe5542"
+Wannier = "2b19380a-1f7e-4d7d-b1b8-8aa60b3321c9"
+WannierIO = "cb1bc77f-5443-4951-af9f-05b616a3e422"
+p7zip_jll = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"

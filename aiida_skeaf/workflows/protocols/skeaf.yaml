@@ -10,7 +10,7 @@ default_inputs:
                 withmpi: False
         parameters:
             # num_electrons: 1
-            band_index: 'all'
+            band_index: -1
     skeaf:
         metadata:
             options:

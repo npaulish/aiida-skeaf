@@ -1,0 +1,9 @@
+---
+# verdi code create core.code.installed code_wan2skeaf.yaml
+label: "skeaf-wan2skeaf-jl"
+description: "Julia script to compute fermi energy and extract single-band bxsf files from wannier90 output bxsf"
+default_calc_job_plugin: "skeaf.wan2skeaf"
+filepath_executable: "/home/paulis_n/Software/aiida-fermisurface/code/aiida-skeaf/utils/wan2skeaf.jl/wan2skeaf.jl"
+computer: "localhost-slurm"
+prepend_text: ""
+append_text: ""
