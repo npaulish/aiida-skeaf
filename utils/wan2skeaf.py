@@ -426,6 +426,7 @@ def estimate_fermi(
             closest_e_below = band_energies[num_expected_occupied_points - 1]
             closest_e_above = band_energies[num_expected_occupied_points]
         print(f"Computed Fermi energy: {computed_fermi}")
+        print(f"Computed Fermi energy in eV: {computed_fermi}")
         print(f"Closest eigenvalue below Fermi energy: {closest_e_below}")
         print(f"Closest eigenvalue above Fermi energy: {closest_e_above}")
         print("-" * 72)

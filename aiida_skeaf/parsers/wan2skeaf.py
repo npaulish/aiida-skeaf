@@ -148,10 +148,14 @@ def parse_wan2skeaf_out(filecontent: ty.List[str]) -> orm.Dict:
         "fermi_energy_computed": re.compile(
             r"Computed Fermi energy:\s*([+-]?(?:[0-9]*[.])?[0-9]+)"
         ),
-        "closest_eigenvalue_below_fl": re.compile(
+        "fermi_energy_computed_eV": re.compile(
+            r"Computed Fermi energy in eV:\s*([+-]?(?:[0-9]*[.])?[0-9]+)"
+        ),
+        "fermi_energy_unit": re.compile(r"Fermi energy unit:\s*(.+)"),
+        "closest_eigenvalue_below_fermi": re.compile(
             r"Closest eigenvalue below Fermi energy:\s*([+-]?(?:[0-9]*[.])?[0-9]+)"
         ),
-        "closest_eigenvalue_above_fl": re.compile(
+        "closest_eigenvalue_above_fermi": re.compile(
             r"Closest eigenvalue above Fermi energy:\s*([+-]?(?:[0-9]*[.])?[0-9]+)"
         ),
         "num_bands": re.compile(r"Number of bands:\s*([0-9]+)"),
@@ -195,11 +199,15 @@ def parse_wan2skeaf_out(filecontent: ty.List[str]) -> orm.Dict:
     ]
     parameters["fermi_energy_in_bxsf"] = float(parameters["fermi_energy_in_bxsf"])
     parameters["fermi_energy_computed"] = float(parameters["fermi_energy_computed"])
-    parameters["closest_eigenvalue_below_fl"] = float(
-        parameters["closest_eigenvalue_below_fl"]
+    parameters["fermi_energy_computed_eV"] = float(
+        parameters["fermi_energy_computed_eV"]
     )
-    parameters["closest_eigenvalue_above_fl"] = float(
-        parameters["closest_eigenvalue_above_fl"]
+    parameters["fermi_energy_unit"] = parameters["fermi_energy_unit"]
+    parameters["closest_eigenvalue_below_fermi"] = float(
+        parameters["closest_eigenvalue_below_fermi"]
+    )
+    parameters["closest_eigenvalue_above_fermi"] = float(
+        parameters["closest_eigenvalue_above_fermi"]
     )
     # make sure the order is the same as parameters["band_indexes_in_bxsf"]
     parameters["band_min"] = [

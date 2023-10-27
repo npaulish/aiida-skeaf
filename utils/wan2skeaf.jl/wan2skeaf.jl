@@ -87,7 +87,6 @@ The script
     # repetitions of the left edges. We remove the redundance here, otherwise,
     # the computed Fermi is wrong.
 
-    # Warning!!! No unit conversion!!! #TODO
     eigenvalues = [bxsf.E[:, i, j, k] for i in 1:(nkx-1) for j in 1:(nky-1) for k in 1:(nkz-1)]
 
     # unit conversion, constants from QE/Modules/Constants.f90
@@ -97,14 +96,14 @@ The script
     BOHR_TO_ANG   = 0.529177210903
 
     εF_bxsf = Wannier.compute_fermi_energy(eigenvalues, num_electrons, kBT, smearing; tol_n_electrons)
-    @printf("Computed Fermi energy: %.8f\n", εF_bxsf) #*(ELECTRONVOLT_SI/RYDBERG_SI))
-    #@printf("Computed Fermi energy (eV): %.8f\n", εF_bxsf)
-
+    @printf("Computed Fermi energy: %.8f\n", εF_bxsf*(ELECTRONVOLT_SI/RYDBERG_SI))
+    @printf("Computed Fermi energy in eV: %.8f\n", εF_bxsf)
+    @printf("Fermi energy unit: Ry\n")
     E_bxsf = reduce(vcat, eigenvalues)
     ε_bxsf_below = maximum(E_bxsf[E_bxsf .< εF_bxsf])
     ε_bxsf_above = minimum(E_bxsf[E_bxsf .> εF_bxsf])
-    @printf("Closest eigenvalue below Fermi energy: %.8f\n", ε_bxsf_below)#*(ELECTRONVOLT_SI/RYDBERG_SI)
-    @printf("Closest eigenvalue above Fermi energy: %.8f\n", ε_bxsf_above)#*(ELECTRONVOLT_SI/RYDBERG_SI)
+    @printf("Closest eigenvalue below Fermi energy: %.8f\n", ε_bxsf_below *(ELECTRONVOLT_SI/RYDBERG_SI))
+    @printf("Closest eigenvalue above Fermi energy: %.8f\n", ε_bxsf_above *(ELECTRONVOLT_SI/RYDBERG_SI))
 
     # write each band into one bxsf file
     if band_index < 0
@@ -118,13 +117,13 @@ The script
         outfile = out_filename * "_band_$(ib).bxsf"
 
 
-        band_min = minimum(bxsf.E[ib:ib, :, :, :])#*(ELECTRONVOLT_SI/RYDBERG_SI)
-        band_max = maximum(bxsf.E[ib:ib, :, :, :])#*(ELECTRONVOLT_SI/RYDBERG_SI)
+        band_min = minimum(bxsf.E[ib:ib, :, :, :])*(ELECTRONVOLT_SI/RYDBERG_SI)
+        band_max = maximum(bxsf.E[ib:ib, :, :, :])*(ELECTRONVOLT_SI/RYDBERG_SI)
 	    println("Min and max of band $ib : $band_min $band_max")
 
 	    #if (bxsf.fermi_energy >= band_min && bxsf.fermi_energy <= band_max)
-	    E_band_Ry = bxsf.E[ib:ib, :, :, :]#.*(ELECTRONVOLT_SI/RYDBERG_SI)
-        E_fermi_Ry = bxsf.fermi_energy#*(ELECTRONVOLT_SI/RYDBERG_SI)
+	    E_band_Ry = bxsf.E[ib:ib, :, :, :].*(ELECTRONVOLT_SI/RYDBERG_SI)
+        E_fermi_Ry = bxsf.fermi_energy*(ELECTRONVOLT_SI/RYDBERG_SI)
         span_vectors_bohr = bxsf.span_vectors.*BOHR_TO_ANG/2/pi
         # what about the origin? It has to be zero (Gamma point) for bxsf so I don't change it here
         WannierIO.write_bxsf(outfile, E_fermi_Ry, bxsf.origin, span_vectors_bohr, E_band_Ry)
