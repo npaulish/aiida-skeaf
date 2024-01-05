@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Extract single-band bxsf from wannier90 bxsf."""
+"""Extract single-band bxsf from wannier90 bxsf.
+WARNING: bug when computing the Fermi energy -
+the periodic replicas of the eigenvalues
+on the reciprocal unit cell edges are taken into account!
+WARNING: the eigenvealues are not converted from eV to Ry!
+"""
 import argparse
 import bz2
 import datetime
