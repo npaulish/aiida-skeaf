@@ -78,9 +78,9 @@ The script
     # To bypass such error, one can only decrease the check on number of electrons.
     # However, in general we should use a (very) small smearing so it could almost
     # always possible to integrate to the exact integer for number of electrons.
-    tol_n_electrons = 1e-3
+    # tol_n_electrons = 1e-3
     # this is the default
-    # tol_n_electrons = 1e-6
+    tol_n_electrons = 1e-6
 
     # note that according to bxsf specification, the eigenvalues are defined
     # on "general grid" instead of "periodic grid", i.e., the right BZ edges are
