@@ -1,4 +1,4 @@
-#!/usr/bin/env -S julia -t 8 --project=/home/paulis_n/Software/aiida-fermisurface/code/aiida-skeaf/utils/computeFermi.jl
+#!/usr/bin/env -S julia -t 1 --project=/home/aiida/envs/aiida-fermisurf/code/aiida-skeaf/utils/computeFermi.jl
 #
 # To use this script, one need to frist instantiate the julia environment, by running
 #   julia --project=.
@@ -9,7 +9,10 @@
 # where you put this script.
 #
 # Example usage: ./compute_fermi.jl remote_path -p seedname -n 18
-# WARNING: number of threads hard-coded to 8!!!
+# WARNING: number of threads hard-coded!!!
+
+using Pkg
+Pkg.instantiate()
 
 using Printf
 using Dates
@@ -71,9 +74,9 @@ The script
     end
 
     if smearing_type == "none"
-        εF = Wannier.compute_fermi_energy(interp, kgrid, num_electrons, kbT, smearing, tol_n_electrons=1e-4)
+        εF = Wannier.compute_fermi_energy(interp, kgrid, num_electrons, kbT, smearing, tol_n_electrons=1e-4, tol_εF=5e-3)
     else
-        εF = Wannier.compute_fermi_energy(interp, kgrid, num_electrons, kbT, smearing)
+        εF = Wannier.compute_fermi_energy(interp, kgrid, num_electrons, kbT, smearing, tol_εF=5e-3)
     end
     @printf("Fermi Energy after interpolation: %.8f\n", εF)
     println("Finished at ", Dates.now())
