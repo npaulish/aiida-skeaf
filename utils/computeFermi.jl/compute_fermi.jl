@@ -35,12 +35,12 @@ The script
 # Options
 
 - `-n, --num_electrons`: number of electrons
-- `-p, --prefix`: seedname for the seedname_tb.dat and seedname_wsvec.dat file, default is `aiida`
+- `-p, --prefix_tb`: seedname for the seedname_tb.dat and seedname_wsvec.dat file, default is `aiida`
 - `-s, --smearing_type`: smearing type, default is `ColdSmearing()`
 - `-w, --width_smearing`: smearing width, default is 0.01
 
 """
-@main function main(filename::String; num_electrons::Int, prefix::String="aiida", smearing_type::String="cold", width_smearing::Float64=0.01)
+@main function main(filename::String; num_electrons::Int, prefix_tb::String="aiida", smearing_type::String="cold", width_smearing::Float64=0.01)
 
     println("Started at ", Dates.now())
     if !isfile(filename)
@@ -53,7 +53,7 @@ The script
         success(ret) || error("Error while unzipping file: $filename")
     end
 
-    tb = read_w90_tb(prefix)
+    tb = read_w90_tb(prefix_tb)
     interp = HamiltonianInterpolator(tb.hamiltonian)
 
     latt = real_lattice(interp)
@@ -73,11 +73,20 @@ The script
         error("Unknown smearing type: $smearing_type")
     end
 
+    kpoints = get_kpoints(kgrid)
+    eigenvalues = interp(kpoints)[1]
+    adpt_kgrid = Wannier.AdaptiveKgrid(kpoints, eigenvalues)
     if smearing_type == "none"
-        εF = Wannier.compute_fermi_energy(interp, kgrid, num_electrons, kbT, smearing, tol_n_electrons=1e-4, tol_εF=5e-3)
+        εF = Wannier.compute_fermi_energy!(adpt_kgrid, interp, num_electrons, kbT, smearing, tol_n_electrons=1e-4, tol_εF=5e-3)
     else
-        εF = Wannier.compute_fermi_energy(interp, kgrid, num_electrons, kbT, smearing, tol_εF=5e-3)
+        εF = Wannier.compute_fermi_energy!(adpt_kgrid, interp, num_electrons, kbT, smearing, tol_εF=5e-3)
     end
     @printf("Fermi Energy after interpolation: %.8f\n", εF)
+    vbm = Wannier.find_vbm(adpt_kgrid_bxsf.vals, εF)[1]
+    cbm = Wannier.find_cbm(adpt_kgrid_bxsf.vals, εF)[1]
+    @printf("Valence band maximum on the interpolated k-point grid: %.8f\n", vbm)
+    @printf("Conduction band minimum on the interpolated k-point grid: %.8f\n", cbm)
+    gap = cbm - vbm
+    @printf("Band gap on the interpolated k-point grid: %.8f\n", gap)
     println("Finished at ", Dates.now())
 end
