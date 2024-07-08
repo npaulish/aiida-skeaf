@@ -20,10 +20,25 @@ from aiida_skeaf.utils.str import removeprefix
 __all__ = ["validate_inputs", "SkeafWorkChain"]
 
 
-def validate_inputs(
-    inputs: AttributeDict, ctx=None  # pylint: disable=unused-argument
-) -> None:
+def validate_inputs(  # pylint: disable=inconsistent-return-statements
+    inputs: AttributeDict, ctx=None
+):  # pylint: disable=unused-argument
     """Validate the inputs of the entire input namespace."""
+    # pylint: disable=no-member
+
+    if "fermi_energy" in inputs["skeaf"]["parameters"]:
+        if "fermi_energy" not in inputs["wan2skeaf"]["parameters"]:
+            inputs["wan2skeaf"]["parameters"]["fermi_energy"] = inputs["skeaf"][
+                "parameters"
+            ]["fermi_energy"]
+        else:
+            if (
+                inputs["wan2skeaf"]["parameters"]["fermi_energy"]
+                != inputs["skeaf"]["parameters"]["fermi_energy"]
+            ):
+                return SkeafWorkChain.exit_codes.ERROR_INVALID_INPUT_FERMI.message
+    elif "fermi_energy" in inputs["wan2skeaf"]["parameters"]:
+        return SkeafWorkChain.exit_codes.ERROR_INVALID_INPUT_FERMI.message
 
 
 class SkeafWorkChain(ProtocolMixin, WorkChain):
@@ -92,6 +107,11 @@ class SkeafWorkChain(ProtocolMixin, WorkChain):
             "ERROR_SUB_PROCESS_FAILED_SKEAF",
             message="Unrecoverable error when running skeaf.",
         )
+        spec.exit_code(
+            500,
+            "ERROR_INVALID_INPUT_FERMI",
+            message="Invalid input parameters. Fermi energy is not consistent between skeaf and wan2skeaf.",
+        )
 
     @classmethod
     def get_protocol_filepath(cls) -> pathlib.Path:
@@ -103,7 +123,7 @@ class SkeafWorkChain(ProtocolMixin, WorkChain):
         return files(protocols) / "skeaf.yaml"
 
     @classmethod
-    def get_builder_from_protocol(  # pylint: disable=too-many-statements
+    def get_builder_from_protocol(  # pylint: disable=too-many-statements, too-many-arguments
         cls,
         codes: ty.Dict[str, ty.Union[orm.Code, str, int]],
         *,

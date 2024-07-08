@@ -94,16 +94,16 @@ class Wan2skeafParser(Parser):
 
         self.out("output_parameters", output_node)
 
-        band_indexes_in_bxsf = output_node.get_dict().get("band_indexes_in_bxsf")
+        bands_crossing_fermi = output_node.get_dict().get("bands_crossing_fermi")
 
         # attach RemoteData for extracted bxsf
         self.logger.info("Attaching extracted bxsf files")
-        self.attach_bxsf_files(band_indexes_in_bxsf)
+        self.attach_bxsf_files(bands_crossing_fermi)
 
         return ExitCode(0)
 
     def attach_bxsf_files(  # pylint: disable=inconsistent-return-statements
-        self, band_indexes_in_bxsf
+        self, bands_crossing_fermi
     ):
         """Attach RemoteData for extracted bxsf."""
 
@@ -111,7 +111,7 @@ class Wan2skeafParser(Parser):
         input_band_index = input_params.get("band_index", -1)
 
         if input_band_index == -1:
-            indexes = band_indexes_in_bxsf
+            indexes = bands_crossing_fermi
         else:
             indexes = [input_band_index]
 
@@ -192,6 +192,11 @@ def parse_wan2skeaf_out(filecontent: ty.List[str]) -> orm.Dict:
             r"Final tolerance for number of electrons:\s*([+-]?(?:[0-9]*[.])?[0-9]+e?[+-]?[0-9]*)"
         ),
         "band_indexes_in_bxsf": re.compile(r"Bands in bxsf:\s*(.+)"),
+        "custom_fermi_energy": re.compile(
+            r"Custom Fermi energy  will be used to select the bands "
+            + r"that are written to separate bxsfs:\s*([+-]?(?:[0-9]*[.])?[0-9]+)"
+        ),
+        "bands_crossing_fermi": re.compile(r"Bands crossing Fermi energy:\s*(.+)"),
         "timestamp_end": re.compile(r"Job done at\s*(.+)"),
     }
     re_band_minmax = re.compile(
@@ -233,6 +238,9 @@ def parse_wan2skeaf_out(filecontent: ty.List[str]) -> orm.Dict:
     parameters["band_indexes_in_bxsf"] = [
         int(_) for _ in parameters["band_indexes_in_bxsf"].split()
     ]
+    parameters["bands_crossing_fermi"] = [
+        int(_) for _ in parameters["bands_crossing_fermi"].split()
+    ]
     float_keys = [
         "smearing_width",
         "tol_n_electrons_initial",
@@ -250,6 +258,8 @@ def parse_wan2skeaf_out(filecontent: ty.List[str]) -> orm.Dict:
     parameters["num_bands"] = int(parameters["num_bands"])
     parameters["num_electrons"] = int(parameters["num_electrons"])
     parameters["occupation_prefactor"] = int(parameters["occupation_prefactor"])
+    if "custom_fermi_energy" in parameters:
+        parameters["custom_fermi_energy"] = float(parameters["custom_fermi_energy"])
 
     # make sure the order is the same as parameters["band_indexes_in_bxsf"]
     parameters["band_min"] = [
