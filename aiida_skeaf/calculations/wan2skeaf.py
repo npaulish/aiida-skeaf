@@ -142,6 +142,8 @@ class Wan2skeafCalculation(CalcJob):
             cmdline_params += ["-p", parameters["occupation_prefactor"]]
         if "tol_n_electrons" in parameters:
             cmdline_params += ["-t", parameters["tol_n_electrons"]]
+        if "fermi_energy" in parameters:
+            cmdline_params += ["-f", parameters["fermi_energy"]]
 
         cmdline_params.append(self.inputs.bxsf_filename.value)
         #
@@ -190,6 +192,7 @@ input_parameters = {
     Optional("smearing_value"): float,
     Optional("occupation_prefactor"): int,
     Optional("tol_n_electrons"): float,
+    Optional("fermi_energy"): float,
 }
 
 

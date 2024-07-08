@@ -35,12 +35,23 @@ The script
 - `-n, --num_electrons`: number of electrons
 - `-b, --band_index`: band index, default is -1 (all bands)
 - `-o, --out_filename`: output filename prefix
-- `-s, --smearing_type`: smearing type, default is `NoneSmearing()` (no smearing)
+- `-s, --smearing_type`: smearing type, default is "none" (corresponding to `NoneSmearing()`, no smearing), other options are "fermi-dirac" or "fd", "marzari-vanderbilt" or "cold"
 - `-w, --width_smearing`: smearing width, default is 0.0
 - `-p, --prefactor`: occupation prefactor, 2 for non SOC, 1 for SOC, default is 2
 - `-t, --tol_n_electrons`: tolerance for number of electrons, default is 1e-6
+- `-f, --fermi_energy`: custom Fermi energy, default is none
 """
-@main function main(bxsf::String; num_electrons::Int, band_index::Int=-1, out_filename::String="skeaf", smearing_type::String="none", width_smearing::Float64=0.0, prefactor::Int=2, tol_n_electrons::Float64=1e-6)
+@main function main(
+    bxsf::String;
+    num_electrons::Int,
+    band_index::Int=-1,
+    out_filename::String="skeaf",
+    smearing_type::String="none",
+    width_smearing::Float64=0.0,
+    prefactor::Int=2,
+    tol_n_electrons::Float64=1e-6,
+    fermi_energy::String="none"
+    )
     println("Started on ", Dates.now())
     if !isfile(bxsf)
         println("ERROR: input file $bxsf does not exist.")
@@ -82,6 +93,10 @@ The script
     println("Smearing width: ", width_smearing)
     println("Occupation prefactor: ", prefactor)
     println("Initial tolerance for number of electrons (default 1e-6): ", tol_n_electrons)
+    parsed_fermi_energy = fermi_energy == "none" ? nothing : tryparse(Float64, fermi_energy)
+    if !isnothing(parsed_fermi_energy)
+        println("Custom Fermi energy  will be used to select the bands that are written to separate bxsfs: ", parsed_fermi_energy)
+    end
 
     # some times, w/o smearing, the number of electrons cannot be integrated to
     # the exact number of electrons, since we only have discrete eigenvalues.
@@ -155,20 +170,26 @@ The script
         band_range = [band_index]
     end
     println("Bands in bxsf: ", join([string(_) for _ in band_range], " "))
+    bands_crossing_fermi = zeros(Int,0)
     for ib in band_range
         # here I am still using the Fermi energy from input bxsf, i.e., QE scf Fermi
         outfile = out_filename * "_band_$(ib).bxsf"
         band_min = minimum(bxsf.E[ib:ib, :, :, :])
         band_max = maximum(bxsf.E[ib:ib, :, :, :])
         println("Min and max of band $ib : $band_min $band_max")
-        #if (bxsf.fermi_energy >= band_min && bxsf.fermi_energy <= band_max)
-        E_band_Ry = bxsf.E[ib:ib, :, :, :].*(ELECTRONVOLT_SI/RYDBERG_SI)
-        E_fermi_Ry = bxsf.fermi_energy*(ELECTRONVOLT_SI/RYDBERG_SI)
-        span_vectors_bohr = bxsf.span_vectors.*BOHR_TO_ANG/2/pi
-        # what about the origin? It has to be zero (Gamma point) for bxsf so I don't change it here
-        WannierIO.write_bxsf(outfile, E_fermi_Ry, bxsf.origin, span_vectors_bohr, E_band_Ry)
-        #end
-    end
 
+        # Check if the Fermi energy (could be custom!) is between the band_min and band_max
+        # only then write the file
+        ϵF = isnothing(parsed_fermi_energy) ? εF_bxsf : parsed_fermi_energy
+        if (ϵF >= band_min && ϵF <= band_max)
+            push!(bands_crossing_fermi, ib)
+            E_band_Ry = bxsf.E[ib:ib, :, :, :].*(ELECTRONVOLT_SI/RYDBERG_SI)
+            E_fermi_Ry = bxsf.fermi_energy*(ELECTRONVOLT_SI/RYDBERG_SI)
+            span_vectors_bohr = bxsf.span_vectors.*BOHR_TO_ANG/2/pi
+            # what about the origin? It has to be zero (Gamma point) for bxsf so I don't change it here
+            WannierIO.write_bxsf(outfile, E_fermi_Ry, bxsf.origin, span_vectors_bohr, E_band_Ry)
+        end
+    end
+    println("Bands crossing Fermi energy: ", join([string(_) for _ in bands_crossing_fermi], " "))
     println("Job done at ", Dates.now())
 end
