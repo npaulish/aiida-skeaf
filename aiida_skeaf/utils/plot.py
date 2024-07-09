@@ -44,8 +44,8 @@ def plot_xy(  # pylint: disable=too-many-arguments
     xlabel: str = None,
     ylabel: str = None,
     title: str = "Frequency vs angle",
-    invert_x: bool = False,
     ax: plt.Axes = None,
+    **kwargs,
 ) -> None:
     """Plot raw data.
 
@@ -63,15 +63,21 @@ def plot_xy(  # pylint: disable=too-many-arguments
         _, ax = plt.subplots(1, 1)
         show_plot = True
 
-    if invert_x:
-        ax.xaxis.set_inverted(True)
-    ax.scatter(
+    if "invert_x" in kwargs:
+        if kwargs["invert_x"]:
+            ax.xaxis.set_inverted(True)
+
+    scatter = ax.scatter(
         x,
         y,
         marker="o",
         label=label,
     )
-
+    if "color" in kwargs:
+        scatter.set_color(kwargs["color"])
+    xlabel = kwargs.get("xlabel", xlabel)
+    ylabel = kwargs.get("ylabel", ylabel)
+    title = kwargs.get("title", title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_title(title)
