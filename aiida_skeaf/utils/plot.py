@@ -45,6 +45,11 @@ def plot_xy(  # pylint: disable=too-many-arguments
     ylabel: str = None,
     title: str = "Frequency vs angle",
     ax: plt.Axes = None,
+    show_plot: bool = False,
+    show_legend: bool = True,
+    x_offset: float = 0.0,
+    scale_x: float = 1.0,
+    invert_x: bool = False,
     **kwargs,
 ) -> None:
     """Plot raw data.
@@ -57,24 +62,30 @@ def plot_xy(  # pylint: disable=too-many-arguments
     :type label: str, optional
     :param ax: If provided reuse this matplotlib axes, defaults to None
     :type ax: matplotlib.pyplot.Axes, optional
+    :param show_plot: _description_, defaults to False
+    :type show_plot: bool, optional
+    :param show_legend: _description_, defaults to True
+    :type show_legend: bool, optional
+    :param x_offset: _description_, defaults to 0.0
+    :type x_offset: float, optional
+    :param scale_x: _description_, defaults to 1.0
+    :type scale_x: float, optional
     """
-    show_plot = False
+
     if ax is None:
         _, ax = plt.subplots(1, 1)
         show_plot = True
 
-    if "invert_x" in kwargs:
-        if kwargs["invert_x"]:
-            ax.xaxis.set_inverted(True)
+    if invert_x:
+        ax.xaxis.set_inverted(True)
 
-    scatter = ax.scatter(
-        x,
+    ax.scatter(
+        scale_x * x + x_offset,
         y,
-        marker="o",
         label=label,
+        **kwargs,
     )
-    if "color" in kwargs:
-        scatter.set_color(kwargs["color"])
+
     xlabel = kwargs.get("xlabel", xlabel)
     ylabel = kwargs.get("ylabel", ylabel)
     title = kwargs.get("title", title)
@@ -82,7 +93,8 @@ def plot_xy(  # pylint: disable=too-many-arguments
     ax.set_ylabel(ylabel)
     ax.set_title(title)
 
-    ax.legend()
+    if show_legend:
+        ax.legend()
 
     if show_plot:
         plt.show()
@@ -165,7 +177,6 @@ def plot_frequency_workchain(
         plot_frequency(frequency=frequency, label=band_idx, ax=ax, **kwargs)
 
     ax.set_title(f"{wkchain.process_label}<{wkchain.pk}>")
-    ax.legend()
 
     if show_plot:
         plt.show()
