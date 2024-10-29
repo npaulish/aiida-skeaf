@@ -196,7 +196,7 @@ def parse_wan2skeaf_out(filecontent: ty.List[str]) -> orm.Dict:
             r"Custom Fermi energy  will be used to select the bands "
             + r"that are written to separate bxsfs:\s*([+-]?(?:[0-9]*[.])?[0-9]+)"
         ),
-        "bands_crossing_fermi": re.compile(r"Bands crossing Fermi energy:\s*(.+)"),
+        "bands_crossing_fermi": re.compile(r"Bands crossing Fermi energy:\s*(.*)"),
         "timestamp_end": re.compile(r"Job done at\s*(.+)"),
     }
     re_band_minmax = re.compile(

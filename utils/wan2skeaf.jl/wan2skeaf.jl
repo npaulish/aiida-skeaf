@@ -1,4 +1,4 @@
-#!/usr/bin/env -S julia --project=/home/paulis_n/Software/aiida-fermisurface/code/aiida-skeaf/utils/wan2skeaf.jl
+#!/usr/bin/env -S julia --project=/home/aiida/envs/aiida-fermisurf/code/aiida-skeaf/utils/wan2skeaf.jl
 #
 # To use this script, one need to frist instantiate the julia environment, by running
 #   julia --project=.
@@ -172,7 +172,6 @@ The script
     println("Bands in bxsf: ", join([string(_) for _ in band_range], " "))
     bands_crossing_fermi = zeros(Int,0)
     for ib in band_range
-        # here I am still using the Fermi energy from input bxsf, i.e., QE scf Fermi
         outfile = out_filename * "_band_$(ib).bxsf"
         band_min = minimum(bxsf.E[ib:ib, :, :, :])
         band_max = maximum(bxsf.E[ib:ib, :, :, :])
@@ -184,7 +183,7 @@ The script
         if (ϵF >= band_min && ϵF <= band_max)
             push!(bands_crossing_fermi, ib)
             E_band_Ry = bxsf.E[ib:ib, :, :, :].*(ELECTRONVOLT_SI/RYDBERG_SI)
-            E_fermi_Ry = bxsf.fermi_energy*(ELECTRONVOLT_SI/RYDBERG_SI)
+            E_fermi_Ry = E_fermi_Ry = ϵF*(ELECTRONVOLT_SI/RYDBERG_SI)
             span_vectors_bohr = bxsf.span_vectors.*BOHR_TO_ANG/2/pi
             # what about the origin? It has to be zero (Gamma point) for bxsf so I don't change it here
             WannierIO.write_bxsf(outfile, E_fermi_Ry, bxsf.origin, span_vectors_bohr, E_band_Ry)
