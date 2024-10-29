@@ -110,7 +110,7 @@ def parse_output(self, dirpath):  # pylint: disable=unused-argument
             r"Final tolerance for number of electrons:\s*([+-]?(?:[0-9]*[.])?[0-9]+e?[+-]?[0-9]*)"
         ),
         "band_indexes_in_bxsf": re.compile(r"Bands in bxsf:\s*(.+)"),
-        "bands_crossing_fermi": re.compile(r"Bands crossing Fermi energy:\s*(.+)"),
+        "bands_crossing_fermi": re.compile(r"Bands crossing Fermi energy:\s*(.*)"),
         "timestamp_end": re.compile(r"Job done at\s*(.+)"),
     }
     re_band_minmax = re.compile(
@@ -214,8 +214,6 @@ def submit_job(
         },
     )
 
-    calc.base.extras.set("bxsf_uuid", bxsf.uuid)
-    calc.base.extras.set("bxsf_pk", bxsf.pk)
     # print(f"Submitted job {calc.pk}")
     return calc
 
@@ -241,11 +239,12 @@ def cmd_group(max_concurrent, run):
 
     Allowed parent nodes: WannierjlCalculation
     """
+    from aiida_fermisurface.calculations.stash import unstash
 
     parent_group_label = "workchain/PBEsol/wannier/lumi/final/bxsf"
     group_label = "workchain/PBEsol/wannier/lumi/final/bxsf/fermi_from_bxsf"
 
-    code = orm.load_code("aiida-shell@localhost")
+    code = orm.load_code("compute-fermi-jl@prnmarvelcompute5-hq")
 
     qb = orm.QueryBuilder()
     qb.append(orm.Group, filters={"label": {"==": group_label}}, tag="group")
@@ -267,17 +266,26 @@ def cmd_group(max_concurrent, run):
         click.echo(f"No slots available")
         return
     else:
+        qb = orm.QueryBuilder()
+        qb.append(orm.Group, filters={"label": {"==": group_label}}, tag="group")
+        qb.append(
+            orm.CalcJobNode,
+            with_group="group",
+            filters={"attributes.sealed": True},
+        )
+        already_done = qb.count()
         print("Max concurrent :", max_concurrent)
         print("Active slots   :", num_active_slots)
         print("Available slots:", num_available_slots)
+        print("Already done   :", already_done)
         print()
 
         print("Submitting...")
-        # TODO: implement the rest of the function to submit the jobs
         # ShellJob.input.nodes.bxsf
         qb = orm.QueryBuilder()
         qb.append(orm.Group, filters={"label": {"==": group_label}}, tag="group")
-        qb.append(orm.CalcJobNode, with_group="group", project=["extras.bxsf_pk"])
+        # qb.append(orm.CalcJobNode, with_group="group", project=["extras.bxsf_pk"])
+        qb.append(orm.CalcJobNode, with_group="group", project=["extras.wjl_pk"])
         qb_parent = orm.QueryBuilder()
         qb_parent.append(
             orm.Group, filters={"label": {"==": parent_group_label}}, tag="parent_group"
@@ -285,43 +293,57 @@ def cmd_group(max_concurrent, run):
         qb_parent.append(
             orm.CalcJobNode,
             with_group="parent_group",
-            filters={"attributes.process_state": {"==": "finished"}},
-            tag="wjlcalc",
-        )
-        qb_parent.append(
-            orm.RemoteData,
-            with_incoming="wjlcalc",
             filters={
                 "and": [
-                    {"extras": {"!has_key": "stash_mode"}},
+                    {"attributes.process_state": {"==": "finished"}},
                     {"id": {"!in": [_[0] for _ in qb.all()]}},
                 ]
             },
+            tag="wjlcalc",
         )
+        # qb_parent.append(
+        #     orm.RemoteData,
+        #     with_incoming="wjlcalc",
+        #     filters={
+        #         "and": [
+        #             {"extras": {"!has_key": "stash_mode"}},
+        #             {"id": {"!in": [_[0] for _ in qb.all()]}},
+        #         ]
+        #     },
+        # )
         qb_parent.limit(num_available_slots)
         to_submit = qb_parent.all()
-        for remote_data in to_submit:
-            w90_calc = (
-                remote_data.creator.inputs.parent_folder.creator.inputs.stash_data.creator
-            )
+        group = orm.load_group(group_label)
+        for parent in to_submit:
+            parent = parent[0]
+            stash_folder = parent.outputs.remote_stash
+            parent_folder = unstash(stash_folder, code.computer)
+            w90_calc = parent.inputs.parent_folder.creator.inputs.stash_data.creator
             w90_params = w90_calc.inputs.parameters.get_dict()
             structure = w90_calc.inputs.structure
             num_electrons = get_num_electrons(structure, w90_params)
-            bxsf = remote_data
+            bxsf = parent_folder
             if run:
                 calc = submit_job(bxsf, num_electrons, code)
-                print(f"BXSF {bxsf.uuid} --> ShellJob {calc.uuid}")
+                print(f"WannierjlCalculation {parent.uuid} --> ShellJob {calc.uuid}")
+                calc.base.extras.set("wjl_pk", parent.pk)
+                calc.base.extras.set("bxsf_uuid", bxsf.uuid)
+                calc.base.extras.set("bxsf_pk", bxsf.pk)
+                group.add_nodes(calc)
             else:
-                print(f"BXSF {bxsf.uuid} --> ...")
+                print(f"WannierjlCalculation {parent.uuid} --> ...")
+        if run:
+            print(f"Added {len(to_submit)} jobs to the group {group.label}")
 
 
 if __name__ == "__main__":
-    group = orm.load_group("workchain/PBEsol/wannier/lumi/final/bxsf/fermi_from_bxsf")
-    bxsf = orm.load_node(uuid="b1b1b1b1-b1b1-b1b1-b1b1-b1b1b1b1b1b1")
-    w90_calc = bxsf.creator.inputs.parent_folder.creator.inputs.stash_data.creator
-    w90_params = w90_calc.inputs.parameters.get_dict()
-    structure = w90_calc.inputs.structure
-    num_electrons = get_num_electrons(structure, w90_params)
-    code = orm.load_code("aiida-shell@localhost")
-    calc = submit_job(bxsf, num_electrons, code)
-    print(f"BXSF {bxsf.uuid} --> ShellJob {calc.uuid}")
+    cmd_group()
+    # group = orm.load_group("workchain/PBEsol/wannier/lumi/final/bxsf/fermi_from_bxsf")
+    # bxsf = orm.load_node(uuid="b7028214-d8b1-44e6-8e08-10db408dcd75")
+    # w90_calc = bxsf.creator.inputs.stash_data.creator.inputs.parent_folder.creator.inputs.stash_data.creator
+    # w90_params = w90_calc.inputs.parameters.get_dict()
+    # structure = w90_calc.inputs.structure
+    # num_electrons = get_num_electrons(structure, w90_params)
+    # code = orm.load_code("compute-fermi-jl@prnmarvelcompute5-hq")
+    # calc = submit_job(bxsf, num_electrons, code)
+    # print(f"BXSF {bxsf.uuid} --> ShellJob {calc.uuid}")
