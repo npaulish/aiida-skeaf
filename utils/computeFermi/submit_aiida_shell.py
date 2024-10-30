@@ -333,7 +333,7 @@ def cmd_group(max_concurrent, run):
             else:
                 print(f"WannierjlCalculation {parent.uuid} --> ...")
         if run:
-            print(f"Added {len(to_submit)} jobs to the group {group.label}")
+            print(f"Added {len(to_submit)} jobs to the group {group.label}\n\n")
 
 
 if __name__ == "__main__":
