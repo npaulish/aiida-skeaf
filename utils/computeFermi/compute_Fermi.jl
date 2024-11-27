@@ -1,4 +1,4 @@
-#!/usr/bin/env -S julia --project=/home/aiida/envs/aiida-fermisurf/code/aiida-skeaf/utils/wan2skeaf.jl
+#!/usr/bin/env -S julia --project=/home/paulis_n/Software/aiida-fermisurface/code/aiida-skeaf/utils/wan2skeaf.jl
 #
 # To use this script, one need to frist instantiate the julia environment, by running
 #   julia --project=.

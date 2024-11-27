@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 # pylint: skip-file
 """Python script to run compute_fermi.jl using aiida-shell."""
-import json
 import re
-from time import sleep
 import typing as ty
 
 from aiida_shell import launch_shell_job
 import click
-from tqdm import tqdm
 
 from aiida import load_profile, orm
 
@@ -209,7 +206,8 @@ def submit_job(
             "options": {
                 "redirect_stderr": True,
                 "use_symlinks": True,
-                "resources": {"num_cores": 1, "num_mpiprocs": 1},
+                "resources": {"num_machines": 1, "num_mpiprocs_per_machine": 1},
+                # "resources": {"num_cores": 1, "num_mpiprocs": 1},
             }
         },
     )
@@ -241,10 +239,12 @@ def cmd_group(max_concurrent, run):
     """
     from aiida_fermisurface.calculations.stash import unstash
 
-    parent_group_label = "workchain/PBEsol/wannier/lumi/final/bxsf"
-    group_label = "workchain/PBEsol/wannier/lumi/final/bxsf/fermi_from_bxsf"
+    parent_group_label = "workchain/PBEsol/wannier/lumi/final/bxsf/cubic_HT_test"
+    group_label = (
+        "workchain/PBEsol/wannier/lumi/final/bxsf/cubic_HT_test/fermi_from_bxsf"
+    )
 
-    code = orm.load_code("compute-fermi-jl@prnmarvelcompute5-hq")
+    code = orm.load_code("compute-Fermi@localhost-slurm")
 
     qb = orm.QueryBuilder()
     qb.append(orm.Group, filters={"label": {"==": group_label}}, tag="group")
@@ -337,13 +337,28 @@ def cmd_group(max_concurrent, run):
 
 
 if __name__ == "__main__":
-    cmd_group()
-    # group = orm.load_group("workchain/PBEsol/wannier/lumi/final/bxsf/fermi_from_bxsf")
-    # bxsf = orm.load_node(uuid="b7028214-d8b1-44e6-8e08-10db408dcd75")
-    # w90_calc = bxsf.creator.inputs.stash_data.creator.inputs.parent_folder.creator.inputs.stash_data.creator
-    # w90_params = w90_calc.inputs.parameters.get_dict()
-    # structure = w90_calc.inputs.structure
-    # num_electrons = get_num_electrons(structure, w90_params)
-    # code = orm.load_code("compute-fermi-jl@prnmarvelcompute5-hq")
-    # calc = submit_job(bxsf, num_electrons, code)
-    # print(f"BXSF {bxsf.uuid} --> ShellJob {calc.uuid}")
+    # cmd_group()
+    from aiida_fermisurface.calculations.stash import unstash
+
+    parent_group_label = "workchain/PBEsol/wannier/lumi/final/bxsf/cubic_HT_test"
+    group = orm.load_group(
+        "workchain/PBEsol/wannier/lumi/final/bxsf/cubic_HT_test/fermi_from_bxsf"
+    )
+    code = orm.load_code("compute-Fermi@localhost-slurm")
+
+    parent = orm.load_group(parent_group_label).nodes[0]
+    stash_folder = parent.outputs.remote_stash
+    parent_folder = unstash(stash_folder, code.computer)
+    w90_calc = parent.inputs.parent_folder.creator.inputs.stash_data.creator
+    w90_params = w90_calc.inputs.parameters.get_dict()
+    structure = w90_calc.inputs.structure
+    num_electrons = get_num_electrons(structure, w90_params)
+    bxsf = parent_folder
+
+    calc = submit_job(bxsf, num_electrons, code)
+    print(f"WannierjlCalculation {parent.uuid} --> ShellJob {calc.uuid}")
+    calc.base.extras.set("wjl_pk", parent.pk)
+    calc.base.extras.set("bxsf_uuid", bxsf.uuid)
+    calc.base.extras.set("bxsf_pk", bxsf.pk)
+    group.add_nodes(calc)
+    print(f"Added job to the group {group.label}")
