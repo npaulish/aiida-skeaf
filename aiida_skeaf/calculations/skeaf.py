@@ -83,7 +83,6 @@ class SkeafCalculation(CalcJob):
         codeinfo.cmdline_params = ["-rdcfg"]
         codeinfo.code_uuid = self.inputs.code.uuid
         codeinfo.stdout_name = self.metadata.options.output_filename
-        codeinfo.withmpi = self.inputs.metadata.options.withmpi
 
         # Prepare a `CalcInfo` to be returned to the engine
         calcinfo = datastructures.CalcInfo()
