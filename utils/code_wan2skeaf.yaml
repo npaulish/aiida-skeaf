@@ -1,10 +1,9 @@
 ---
-# verdi code setup --config code_wan2skeaf.yaml
+# verdi code create core.code.installed --config code_wan2skeaf.yaml
 label: "skeaf-wan2skeaf"
-description: "Python script to extract single-band bxsf files from wannier90 output bxsf"
-input_plugin: "skeaf.wan2skeaf"
-on_computer: true
-remote_abs_path: "/home/USER_NAME/bin/wan2skeaf.py"
+description: "Julia script to extract single-band bxsf files from wannier90 output bxsf"
+default_calc_job_plugin: "skeaf.wan2skeaf"
+filepath_executable: "/home/USER_NAME/bin/wan2skeaf.jl"
 computer: "localhost"
 prepend_text: ""
 append_text: ""
