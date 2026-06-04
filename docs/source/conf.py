@@ -14,15 +14,24 @@ import os
 import sys
 import time
 
-from aiida.manage.configuration import load_documentation_profile
-
 import aiida_skeaf
 
 # -- AiiDA-related setup --------------------------------------------------
 
-# Load the dummy profile even if we are running locally, this way the documentation will succeed even if the current
-# default profile of the AiiDA installation does not use a Django backend.
-load_documentation_profile()
+# aiida-core 2.x: load a temporary in-memory profile (no config file needed).
+# Fall back to the old load_documentation_profile for aiida-core 1.x.
+try:
+    from aiida.manage import get_manager
+    from aiida.storage.sqlite_temp import SqliteTempBackend
+
+    get_manager().load_profile(SqliteTempBackend.create_profile("docs"))
+except Exception:
+    try:
+        from aiida.manage.configuration import load_documentation_profile
+
+        load_documentation_profile()
+    except Exception:
+        pass
 
 # -- General configuration ------------------------------------------------
 

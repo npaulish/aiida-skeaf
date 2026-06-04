@@ -45,7 +45,7 @@ def test_create_bxsf_from_file(aiida_localhost, tmp_path):
     assert result.get_remote_path() == str(bxsf_file)
 
 
-def test_skeaf(  # pylint: disable=too-many-arguments
+def test_skeaf(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     skeaf_code,
     generate_bxsf_remotedata,
     generate_input_parameters,
