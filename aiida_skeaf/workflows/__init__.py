@@ -15,7 +15,6 @@ from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin
 
 from aiida_skeaf.calculations import SkeafCalculation, Wan2skeafCalculation
-from aiida_skeaf.utils.str import removeprefix
 
 __all__ = ["validate_inputs", "SkeafWorkChain"]
 
@@ -248,8 +247,7 @@ class SkeafWorkChain(ProtocolMixin, WorkChain):
 
         for band_idx, bxsf in bxsf_to_run.items():
             # Only calculate bands acrossing Fermi
-            # idx = int(band_idx.removeprefix("band"))
-            idx = int(removeprefix(band_idx, "band"))
+            idx = int(band_idx.removeprefix("band"))
             idx = w2s_output_params["band_indexes_in_bxsf"].index(idx)
             band_min = w2s_output_params["band_min"][idx]
             band_max = w2s_output_params["band_max"][idx]
