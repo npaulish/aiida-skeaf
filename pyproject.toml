@@ -20,7 +20,7 @@ classifiers = [
     "Framework :: AiiDA"
 ]
 keywords = ["aiida", "plugin"]
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = [
     "aiida-core>=1.6.4,<3",
     "aiida-wannier90-workflows>=2.1.0",
@@ -121,12 +121,12 @@ known_aiida_wannier90_workflows = ['aiida_wannier90_workflows']
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py310
+envlist = py39
 
 [testenv]
 usedevelop=True
 
-[testenv:py{310,311,312}]
+[testenv:py{39,310,311,312}]
 description = Run the test suite against a python version
 extras = testing
 commands = pytest {posargs}
